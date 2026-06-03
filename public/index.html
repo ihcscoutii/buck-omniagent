@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Buck • Little League Scorekeeper</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@touchcastllc/napster-companion-api@1.0.0-alpha.48/lib/index.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">⚾ <strong>BUCK</strong><span>AI Little League Announcer</span></div>
+      <div id="conn" class="conn dot-off">live</div>
+    </header>
+
+    <main>
+      <!-- SCOREBOARD -->
+      <section class="scoreboard">
+        <div class="line-wrap">
+          <table class="linescore" id="linescore"></table>
+        </div>
+        <div class="count">
+          <div class="count-cell"><span id="inningHalf">▲</span><label>INN</label><b id="inningNum">1</b></div>
+          <div class="count-cell"><label>BALLS</label><b id="balls">0</b></div>
+          <div class="count-cell"><label>STRIKES</label><b id="strikes">0</b></div>
+          <div class="count-cell"><label>OUTS</label><b id="outs">0</b></div>
+          <div class="diamond" id="diamond" aria-label="bases">
+            <div class="base b2"></div>
+            <div class="base b3"></div>
+            <div class="base b1"></div>
+            <div class="home-plate"></div>
+          </div>
+        </div>
+      </section>
+
+      <div id="recap" class="recap" hidden></div>
+
+      <div class="cols">
+        <!-- LEFT: play-by-play + control -->
+        <section class="panel">
+          <h2>Play-by-play <span class="atbat" id="atbat"></span></h2>
+          <ul class="pbp" id="pbp"></ul>
+
+          <details class="control" open>
+            <summary>Manual control (demo without voice)</summary>
+            <div class="btns quick">
+              <button id="randomGame">🎲 Random game (9 vs 9)</button>
+            </div>
+            <div class="btns pitch">
+              <button data-tool="record_pitch" data-args='{"type":"ball"}'>Ball</button>
+              <button data-tool="record_pitch" data-args='{"type":"strike"}'>Strike</button>
+              <button data-tool="record_pitch" data-args='{"type":"foul"}'>Foul</button>
+            </div>
+            <div class="btns">
+              <button data-tool="record_play" data-args='{"result":"single"}'>Single</button>
+              <button data-tool="record_play" data-args='{"result":"double"}'>Double</button>
+              <button data-tool="record_play" data-args='{"result":"triple"}'>Triple</button>
+              <button data-tool="record_play" data-args='{"result":"home_run"}'>HR</button>
+              <button data-tool="record_play" data-args='{"result":"walk"}'>Walk</button>
+              <button data-tool="record_play" data-args='{"result":"strikeout"}'>K</button>
+              <button data-tool="record_play" data-args='{"result":"groundout"}'>Groundout</button>
+              <button data-tool="record_play" data-args='{"result":"flyout"}'>Flyout</button>
+              <button data-tool="next_inning">Next ½</button>
+              <button class="warn" data-tool="undo">Undo</button>
+              <button class="warn" data-tool="end_game">End</button>
+              <button class="warn" data-tool="reset_game">🔄 New game</button>
+            </div>
+          </details>
+
+          <details class="control">
+            <summary>Lineups &amp; new game (enter before first pitch)</summary>
+            <div class="setup">
+              <div class="setup-row">
+                <label>Away team<input id="awayName" value="Sharks" /></label>
+                <label>Home team<input id="homeName" value="Tigers" /></label>
+              </div>
+              <p class="hint">One batter per line in order: <code>number name</code> (e.g. <code>12 Tommy</code>). Number optional.</p>
+              <div class="setup-row">
+                <label>Away lineup<textarea id="awayLineup" rows="9" placeholder="7 Tommy&#10;3 Mia&#10;21 Jordan"></textarea></label>
+                <label>Home lineup<textarea id="homeLineup" rows="9" placeholder="5 Sam&#10;9 Ana&#10;14 Lee"></textarea></label>
+              </div>
+              <button id="startGame">Start new game with these lineups</button>
+            </div>
+          </details>
+
+          <a class="print-link" href="/scoresheet.html" target="_blank" rel="noopener">🖨️ Open printable score sheet →</a>
+        </section>
+
+        <!-- RIGHT: box scores + Buck -->
+        <section class="panel">
+          <div class="avatar-card">
+            <div id="avatar-container" class="avatar-slot">
+              <div class="avatar-placeholder">
+                <p>Buck the Announcer mounts here.</p>
+                <button id="mountBtn">🎙️ Connect Buck</button>
+                <input id="token" placeholder="(optional) paste a token to override…" />
+                <small>One click mints a fresh session token on the server. Allow mic access, then talk to Buck. Or use Manual control on the left.</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="box" id="boxAway"></div>
+          <div class="box" id="boxHome"></div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Napster Companion Web SDK (standalone, no build step).
+         Pinned to a verified version; sets window.napsterCompanionApiSDK. -->
+    <script src="https://cdn.jsdelivr.net/npm/@touchcastllc/napster-companion-api@1.0.0-alpha.48/lib/index.standalone.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

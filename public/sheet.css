@@ -1,0 +1,42 @@
+/* Printable score sheet — light theme so it prints cleanly on paper. */
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 24px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #111; background: #f4f4ef;
+}
+.toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; }
+.toolbar button, .toolbar a {
+  font: inherit; padding: 8px 14px; border: 1px solid #1d3a2c; background: #11211a; color: #e8f3ec;
+  border-radius: 8px; cursor: pointer; text-decoration: none;
+}
+.toolbar a { background: transparent; color: #1d3a2c; }
+
+.sheet-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #111; padding-bottom: 8px; margin-bottom: 16px; }
+.sheet-head h1 { margin: 0; font-size: 22px; }
+.meta { text-align: right; }
+.meta span { display: block; font-variant-numeric: tabular-nums; }
+.meta span:first-child { font-size: 18px; font-weight: 700; }
+
+h2 { font-size: 16px; margin: 18px 0 6px; }
+
+table.card { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+table.card th, table.card td { border: 1px solid #999; padding: 4px 5px; text-align: center; }
+table.card thead th { background: #e3e3da; font-size: 11px; }
+table.card td.ord, table.card th.ord { width: 26px; color: #666; }
+table.card td.batter, table.card th.batter { text-align: left; white-space: nowrap; min-width: 130px; font-weight: 600; }
+table.card td.batter .num { display: inline-block; min-width: 22px; color: #555; font-weight: 700; }
+td.ab { height: 34px; min-width: 38px; vertical-align: middle; }
+td.ab .pa { font-weight: 700; }
+td.ab .pa.score { background: #ffe08a; border-radius: 3px; padding: 0 3px; }
+td.ab .pa sup { color: #b3471d; font-weight: 700; }
+.tot-row td { background: #f0f0e8; font-weight: 700; }
+.empty { color: #999; font-style: italic; }
+.legend { font-size: 11px; color: #555; margin-top: 12px; }
+
+@media print {
+  body { padding: 0; background: #fff; }
+  .no-print { display: none !important; }
+  table.card { font-size: 11px; }
+  h2 { page-break-after: avoid; }
+}
