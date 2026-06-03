@@ -172,6 +172,11 @@ const server = http.createServer(async (req, res) => {
 
   // Mint a fresh Napster session token for the browser SDK (one-click connect).
   if (path === "/api/token") {
+    // Gate session creation too — it spends Napster minutes, so don't let
+    // anonymous visitors open avatar sessions on a public host.
+    if (TOOL_SECRET && req.headers["x-tool-secret"] !== TOOL_SECRET) {
+      return send(res, 401, JSON.stringify({ error: "Operator key required." }), { "Content-Type": "application/json" });
+    }
     // Re-read .agent.json each call so re-running `npm run setup` (new agent /
     // updated instructions) takes effect without restarting the server.
     let agentId = AGENT_ID;

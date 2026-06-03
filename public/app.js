@@ -3,6 +3,31 @@
 
 const $ = (id) => document.getElementById(id);
 
+// ---- operator key (gates writes when the server has TOOL_SECRET set) ------
+// Spectators can watch (reads are open); driving the game needs the key.
+function opKey() {
+  const el = $("opKey");
+  return (el && el.value.trim()) || sessionStorage.getItem("opKey") || "";
+}
+function initOpKey() {
+  const el = $("opKey");
+  if (!el) return;
+  el.value = sessionStorage.getItem("opKey") || "";
+  el.addEventListener("input", () => sessionStorage.setItem("opKey", el.value.trim()));
+}
+// POST to a tool endpoint with the operator key attached.
+async function toolPost(tool, args = {}) {
+  const res = await fetch(`/tools/${tool}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-tool-secret": opKey() },
+    body: JSON.stringify(args),
+  });
+  if (res.status === 401) {
+    alert("Operator key required (or incorrect). Enter it in the Manual control panel to drive the game.");
+  }
+  return res;
+}
+
 // ---- live state stream ---------------------------------------------------
 function connect() {
   const es = new EventSource("/events");
@@ -106,11 +131,7 @@ document.querySelectorAll(".btns button").forEach((btn) => {
     const tool = btn.dataset.tool;
     if (!tool) return; // buttons with their own handler (e.g. Random game)
     const args = btn.dataset.args ? JSON.parse(btn.dataset.args) : {};
-    await fetch(`/tools/${tool}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(args),
-    });
+    await toolPost(tool, args);
     // The server broadcasts new state over SSE, so no manual re-render needed.
   });
 });
@@ -151,11 +172,7 @@ $("randomGame")?.addEventListener("click", async () => {
   if ($("homeName")) $("homeName").value = teams[1];
   if ($("awayLineup")) $("awayLineup").value = away.map((p) => `${p.number} ${p.name}`).join("\n");
   if ($("homeLineup")) $("homeLineup").value = home.map((p) => `${p.number} ${p.name}`).join("\n");
-  await fetch("/tools/new_game", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  await toolPost("new_game", payload);
   // Scoreboard updates via SSE; no reload needed.
 });
 
@@ -182,12 +199,8 @@ $("startGame")?.addEventListener("click", async () => {
   if (payload.awayLineup.length === 0 && payload.homeLineup.length === 0) {
     if (!confirm("No players entered. Start an empty game anyway?")) return;
   }
-  await fetch("/tools/new_game", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  alert("New game started!");
+  const r = await toolPost("new_game", payload);
+  if (r.ok) alert("New game started!");
 });
 
 // ---- Napster avatar mount ------------------------------------------------
@@ -212,7 +225,7 @@ $("mountBtn")?.addEventListener("click", async () => {
     // user pasted one manually for debugging.
     let token = $("token").value.trim();
     if (!token) {
-      const r = await fetch("/api/token?channel=webrtc");
+      const r = await fetch("/api/token?channel=webrtc", { headers: { "x-tool-secret": opKey() } });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Could not mint token");
       token = j.token;
@@ -224,4 +237,5 @@ $("mountBtn")?.addEventListener("click", async () => {
   }
 });
 
+initOpKey();
 connect();

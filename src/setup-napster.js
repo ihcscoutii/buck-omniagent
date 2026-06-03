@@ -118,19 +118,21 @@ IMPORTANT — stay in sync with the official scoreboard:
 - The base-running tools auto-advance runners on common plays. If something unusual happens (a steal, pickoff, or a runner takes an extra base) and the returned bases look wrong, call set_bases to correct exactly who is on first, second, and third.`;
 
 async function main() {
-  // Register tools (idempotent). A function's id is its name, so we just make
-  // sure each exists and reference it by name. NOTE: if PUBLIC_TOOL_URL changed
-  // since a previous run, delete the old functions first so the URL refreshes.
-  console.log(`Registering ${toolDefs.length} tools -> ${TOOL_URL}/tools/*`);
+  // Upsert tools: create, or PUT to refresh if it already exists. This keeps the
+  // URL and the x-tool-secret header current on every run (e.g. after changing
+  // PUBLIC_TOOL_URL or TOOL_SECRET, or moving to Azure). id === name.
+  console.log(`Registering ${toolDefs.length} tools -> ${TOOL_URL}/tools/*${TOOL_SECRET ? " (secured)" : ""}`);
   const functionIds = [];
   for (const def of toolDefs) {
     const name = def.data.name;
     try {
       await api("POST", "/functions", def);
-      console.log(`  ✓ ${name}`);
+      console.log(`  ✓ ${name} (created)`);
     } catch (e) {
-      if (/409|AlreadyExists/i.test(e.message)) console.log(`  • ${name} (already exists)`);
-      else throw e;
+      if (/409|AlreadyExists/i.test(e.message)) {
+        await api("PUT", `/functions/${name}`, def);
+        console.log(`  ↻ ${name} (updated)`);
+      } else throw e;
     }
     functionIds.push(name); // function id === function name
   }

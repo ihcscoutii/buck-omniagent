@@ -94,6 +94,18 @@ npm test   # game-engine sanity checks
 
 Set `CHANNEL=websocket` in `.env` for a voice-only Buck, or `webrtc` for the video avatar.
 
+## Securing it / hosting
+
+The tool endpoints and session minting are gated by a shared `TOOL_SECRET`:
+
+- Napster sends it automatically (setup attaches it to each tool's headers).
+- The operator types it once into the **Operator key** field in the UI to drive the game.
+- Reads (the scoreboard and SSE stream) stay open, so spectators can watch.
+
+To get a permanent public URL and drop the tunnel entirely, deploy to **Azure
+App Service** — the app already reads its config from env vars and listens on
+`process.env.PORT`. See **[DEPLOY.md](DEPLOY.md)**.
+
 ## Tools Buck can call
 
 | Tool | Purpose |
