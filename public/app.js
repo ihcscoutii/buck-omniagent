@@ -5,15 +5,36 @@ const $ = (id) => document.getElementById(id);
 
 // ---- operator key (gates writes when the server has TOOL_SECRET set) ------
 // Spectators can watch (reads are open); driving the game needs the key.
+// Persisted on this device in localStorage, lightly obfuscated (base64) so it's
+// not glanceable plaintext. Note: this is obfuscation, not real encryption — the
+// browser needs the key in the clear to send it, so treat the device as trusted.
+const OPKEY_STORE = "buckOpKey";
+function loadStoredKey() {
+  try {
+    const v = localStorage.getItem(OPKEY_STORE);
+    return v ? atob(v) : "";
+  } catch {
+    return "";
+  }
+}
+function storeKey(v) {
+  if (v) localStorage.setItem(OPKEY_STORE, btoa(v));
+  else localStorage.removeItem(OPKEY_STORE);
+}
 function opKey() {
   const el = $("opKey");
-  return (el && el.value.trim()) || sessionStorage.getItem("opKey") || "";
+  return (el && el.value.trim()) || loadStoredKey() || "";
 }
 function initOpKey() {
   const el = $("opKey");
   if (!el) return;
-  el.value = sessionStorage.getItem("opKey") || "";
-  el.addEventListener("input", () => sessionStorage.setItem("opKey", el.value.trim()));
+  el.value = loadStoredKey(); // prefilled on load — no need to retype
+  el.addEventListener("input", () => storeKey(el.value.trim()));
+  $("forgetKey")?.addEventListener("click", () => {
+    storeKey("");
+    el.value = "";
+    el.focus();
+  });
 }
 // POST to a tool endpoint with the operator key attached.
 async function toolPost(tool, args = {}) {

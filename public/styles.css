@@ -95,6 +95,8 @@ main { max-width: 1180px; margin: 0 auto; padding: 20px; }
 .control summary { cursor: pointer; color: var(--muted); font-size: 13px; }
 .opkey { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; font-size: 12px; color: var(--muted); }
 .opkey input { padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: #0a1410; color: var(--ink); font: inherit; }
+.linklike { align-self: flex-start; background: none; border: 0; color: var(--muted); font-size: 11px; text-decoration: underline; cursor: pointer; padding: 0; }
+.linklike:hover { color: var(--warn); }
 .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .btns button {
   background: #1a3225; color: var(--ink); border: 1px solid var(--line);
