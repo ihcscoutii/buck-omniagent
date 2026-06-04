@@ -292,7 +292,10 @@ async function connectBuck() {
     buckInstance = await sdk.init(token, {
       mountContainer: $("avatar-container"),
       position: "bottom-right",
-      onDestroy: () => disconnectBuck(),       // session ended (manual/inactivity)
+      // The SDK caps the inactivity timeout at 3 min; disable it so the session
+      // stays up through pauses in the game (you disconnect manually instead).
+      features: { inactiveTimeout: { enabled: false } },
+      onDestroy: () => disconnectBuck(),       // session ended (manual/network)
       onError: (e) => console.error("Buck:", e),
     });
     setBuckButton("connected");
