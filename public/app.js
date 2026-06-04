@@ -236,11 +236,49 @@ function getNapsterSdk() {
   );
 }
 
-$("mountBtn")?.addEventListener("click", async () => {
+let buckInstance = null;
+let buckState = "idle"; // idle | connecting | connected
+let buckWatch = null;
+
+function setBuckButton(state) {
+  buckState = state;
+  const btn = $("mountBtn");
+  if (!btn) return;
+  if (state === "idle") {
+    btn.disabled = false; btn.textContent = "🎙️ Connect Buck"; btn.title = "";
+    btn.classList.remove("connected");
+  } else if (state === "connecting") {
+    btn.disabled = true; btn.textContent = "Connecting…"; btn.title = "";
+    btn.classList.remove("connected");
+  } else if (state === "connected") {
+    btn.disabled = false; btn.textContent = "✓ Connected"; btn.title = "Click to disconnect";
+    btn.classList.add("connected");
+  }
+}
+
+function disconnectBuck() {
+  clearInterval(buckWatch);
+  try { buckInstance?.destroy(); } catch {}
+  buckInstance = null;
+  setBuckButton("idle");
+}
+
+// Fallback for drops the SDK doesn't fire onDestroy for (inactivity, network):
+// sessionId is set once connected and cleared when the connection closes.
+function watchConnection() {
+  clearInterval(buckWatch);
+  let sawSession = false;
+  buckWatch = setInterval(() => {
+    if (buckState !== "connected" || !buckInstance) return clearInterval(buckWatch);
+    if (buckInstance.sessionId) sawSession = true;
+    else if (sawSession) disconnectBuck(); // had a session, now gone -> closed
+  }, 2000);
+}
+
+async function connectBuck() {
   const sdk = getNapsterSdk();
   if (!sdk) return alert("Napster SDK failed to load (offline / blocked CDN?). Manual control still works.");
-  const btn = $("mountBtn");
-  btn.disabled = true; btn.textContent = "Connecting…";
+  setBuckButton("connecting");
   try {
     // Token is minted server-side on demand (it expires in seconds), unless the
     // user pasted one manually for debugging.
@@ -251,11 +289,24 @@ $("mountBtn")?.addEventListener("click", async () => {
       if (!r.ok) throw new Error(j.error || "Could not mint token");
       token = j.token;
     }
-    await sdk.init(token, { mountContainer: $("avatar-container"), position: "bottom-right" });
+    buckInstance = await sdk.init(token, {
+      mountContainer: $("avatar-container"),
+      position: "bottom-right",
+      onDestroy: () => disconnectBuck(),       // session ended (manual/inactivity)
+      onError: (e) => console.error("Buck:", e),
+    });
+    setBuckButton("connected");
+    watchConnection();
   } catch (err) {
     alert("Could not connect Buck: " + err.message);
-    btn.disabled = false; btn.textContent = "Connect Buck";
+    setBuckButton("idle");
   }
+}
+
+$("mountBtn")?.addEventListener("click", () => {
+  if (buckState === "connected") disconnectBuck();
+  else if (buckState === "idle") connectBuck();
+  // "connecting" is disabled, so clicks are ignored
 });
 
 initOpKey();

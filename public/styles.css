@@ -133,6 +133,8 @@ main { max-width: 1180px; margin: 0 auto; padding: 20px; }
 .avatar-placeholder { text-align: center; color: var(--muted); padding: 16px; }
 .avatar-placeholder input { width: 100%; padding: 8px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--line); background: #0a1410; color: var(--ink); }
 .avatar-placeholder button { padding: 8px 16px; border-radius: 8px; border: 0; background: var(--accent); color: #1a1400; font-weight: 700; cursor: pointer; }
+.avatar-placeholder button.connected { background: var(--accent2); color: #002016; }
+.avatar-placeholder button:disabled { opacity: 0.8; cursor: default; }
 .avatar-placeholder small { display: block; margin-top: 10px; font-size: 11px; }
 
 /* BOX SCORE */
