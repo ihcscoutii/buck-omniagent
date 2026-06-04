@@ -44,10 +44,6 @@
 
           <details class="control" open>
             <summary>Manual control (demo without voice)</summary>
-            <label class="opkey">Operator key
-              <input id="opKey" type="password" placeholder="saved on this device" autocomplete="off" />
-              <button id="forgetKey" type="button" class="linklike">Forget on this device</button>
-            </label>
             <div class="btns quick">
               <button id="randomGame">🎲 Random game (9 vs 9)</button>
             </div>
@@ -98,8 +94,7 @@
               <div class="avatar-placeholder">
                 <p>Buck the Announcer mounts here.</p>
                 <button id="mountBtn">🎙️ Connect Buck</button>
-                <input id="token" placeholder="(optional) paste a token to override…" />
-                <small>One click mints a fresh session token on the server. Allow mic access, then talk to Buck. Or use Manual control on the left.</small>
+                <small>Allow mic access, then talk to Buck. (First time: set your operator key in ⚙ Settings below.)</small>
               </div>
             </div>
           </div>
@@ -108,6 +103,19 @@
           <div class="box" id="boxHome"></div>
         </section>
       </div>
+
+      <details class="settings">
+        <summary>⚙ Settings</summary>
+        <div class="settings-body">
+          <label class="opkey">Operator key
+            <input id="opKey" type="password" placeholder="saved on this device" autocomplete="off" />
+            <button id="forgetKey" type="button" class="linklike">Forget on this device</button>
+          </label>
+          <label class="opkey">Session token (optional override)
+            <input id="token" placeholder="(optional) paste a token…" autocomplete="off" />
+          </label>
+        </div>
+      </details>
     </main>
 
     <!-- Napster Companion Web SDK (standalone, no build step).
