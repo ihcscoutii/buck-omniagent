@@ -106,7 +106,10 @@ function statLine(name, s) {
 }
 
 // ---- HTTP plumbing -------------------------------------------------------
-const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css" };
+const MIME = {
+  ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
+  ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon",
+};
 
 function send(res, code, body, headers = {}) {
   res.writeHead(code, { "Access-Control-Allow-Origin": "*", ...headers });
