@@ -52,7 +52,13 @@ function newPlayer(name, number) {
     r: 0, // runs scored
     bb: 0,
     k: 0,
+    sb: 0, // stolen bases
   };
+}
+
+// Empty string / null -> null; otherwise a number.
+function normNum(n) {
+  return n === 0 || (n != null && n !== "") ? Number(n) : null;
 }
 
 function newTeam(name, players = []) {
@@ -444,8 +450,70 @@ export function setBases(game, first, second, third) {
   snapshot(game);
   const norm = (v) => (v && String(v).trim() ? String(v).trim() : null);
   game.bases = [norm(first), norm(second), norm(third)];
-  logPlay(game, `Bases set — 1B: ${game.bases[0] || "—"}, 2B: ${game.bases[1] || "—"}, 3B: ${game.bases[2] || "—"}.`);
-  return summarize(game);
+  const msg = `Bases set — 1B: ${game.bases[0] || "—"}, 2B: ${game.bases[1] || "—"}, 3B: ${game.bases[2] || "—"}.`;
+  logPlay(game, msg);
+  return summarize(game, msg);
+}
+
+// Append a batter to a team's order mid-game WITHOUT resetting anyone's stats
+// or the current batter. For when the game starts before the full roster is in.
+export function addBatter(game, side, name, number) {
+  snapshot(game);
+  if (side !== "home" && side !== "away") throw new Error("side must be home/away");
+  if (!name || !String(name).trim()) {
+    game._history.pop();
+    throw new Error("A name is required.");
+  }
+  game[side].players.push(newPlayer(String(name).trim(), normNum(number)));
+  const msg = `Added ${String(name).trim()} to ${game[side].name}.`;
+  logPlay(game, msg);
+  return summarize(game, msg);
+}
+
+// Edit an existing batter's name/number by their order index (stats preserved).
+export function editBatter(game, side, index, changes = {}) {
+  snapshot(game);
+  const team = game[side];
+  const p = team && team.players[index];
+  if (!p) {
+    game._history.pop();
+    throw new Error("Player not found.");
+  }
+  if (changes.name != null && String(changes.name).trim()) p.name = String(changes.name).trim();
+  if ("number" in changes) p.number = normNum(changes.number);
+  const msg = `Updated ${p.name}.`;
+  logPlay(game, msg);
+  return summarize(game, msg);
+}
+
+// Advance the runner currently on `base` (1, 2, or 3) one base on a steal,
+// scoring on a steal of home. Credits a stolen base to that runner.
+export function stealBase(game, base) {
+  snapshot(game);
+  const i = Number(base) - 1; // 0=1B, 1=2B, 2=3B
+  if (i < 0 || i > 2) {
+    game._history.pop();
+    throw new Error("base must be 1, 2, or 3");
+  }
+  const runner = game.bases[i];
+  if (!runner) {
+    game._history.pop();
+    throw new Error("No runner on that base.");
+  }
+  const p = battingTeam(game).players.find((x) => x.name === runner);
+  if (p) p.sb += 1;
+  game.bases[i] = null;
+  let msg;
+  if (i === 2) {
+    addRuns(game, 1); // steal of home scores
+    if (p) p.r += 1;
+    msg = `${runner} steals home!`;
+  } else {
+    game.bases[i + 1] = runner;
+    msg = `${runner} steals ${i === 0 ? "second" : "third"}.`;
+  }
+  logPlay(game, msg);
+  return summarize(game, msg);
 }
 
 export function setLineup(game, side, names = []) {
@@ -567,7 +635,7 @@ export function scoresheet(game) {
         number: p.number ?? null,
         name: p.name,
         cells,
-        totals: { ab: p.ab, r: p.r, h: p.h, rbi: p.rbi, bb: p.bb, k: p.k, avg: fmtAvg(p) },
+        totals: { ab: p.ab, r: p.r, h: p.h, rbi: p.rbi, bb: p.bb, k: p.k, sb: p.sb, avg: fmtAvg(p) },
       };
     });
 

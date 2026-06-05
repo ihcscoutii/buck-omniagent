@@ -58,7 +58,9 @@ function connect() {
 }
 
 // ---- rendering -----------------------------------------------------------
+let lastState = null;
 function render(s) {
+  lastState = s;
   // Count + bases
   $("inningNum").textContent = s.inning;
   $("inningHalf").textContent = s.half === "top" ? "▲" : "▼";
@@ -80,6 +82,8 @@ function render(s) {
   }
 
   renderRecap(s.recap);
+  populateBaseControls(s);
+  populateRoster(s);
   renderLineScore(s);
   renderPbp(s.log);
   renderBox("boxAway", s.teams.away.name, s.players.away, s.batting === "away", s.teams.away.battingIndex);
@@ -135,10 +139,10 @@ function renderBox(elId, name, players, isBatting, upIndex) {
     return `<tr class="${up ? "up" : ""}">
       <td class="name">${escapeHtml(num)}${escapeHtml(p.name)}</td>
       <td>${p.ab}</td><td>${p.r}</td><td>${p.h}</td><td>${p.rbi}</td>
-      <td>${p.bb}</td><td>${p.k}</td><td>${p.avg}</td></tr>`;
+      <td>${p.bb}</td><td>${p.k}</td><td>${p.sb || 0}</td><td>${p.avg}</td></tr>`;
   });
   $(elId).innerHTML = `<h3>${escapeHtml(name)}</h3>
-    <table><tr><th class="name">Batter</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>K</th><th>AVG</th></tr>
+    <table><tr><th class="name">Batter</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>K</th><th>SB</th><th>AVG</th></tr>
     ${rows.join("")}</table>`;
 }
 
@@ -195,6 +199,65 @@ $("randomGame")?.addEventListener("click", async () => {
   if ($("homeLineup")) $("homeLineup").value = home.map((p) => `${p.number} ${p.name}`).join("\n");
   await toolPost("new_game", payload);
   // Scoreboard updates via SSE; no reload needed.
+});
+
+// ---- bases editor + live roster controls --------------------------------
+// Rebuild a <select> unless the user is mid-edit (has it focused).
+function fillSelect(sel, options, selected) {
+  if (!sel || document.activeElement === sel) return;
+  sel.innerHTML = options
+    .map((o) => `<option value="${escapeHtml(o.value)}"${o.value === selected ? " selected" : ""}>${escapeHtml(o.label)}</option>`)
+    .join("");
+}
+function playerLabel(p) {
+  return (p.number != null && p.number !== "" ? `#${p.number} ` : "") + p.name;
+}
+function populateBaseControls(s) {
+  const players = s.players[s.batting] || [];
+  const opts = [{ value: "", label: "— empty —" }, ...players.map((p) => ({ value: p.name, label: playerLabel(p) }))];
+  fillSelect($("b1sel"), opts, s.bases[0] || "");
+  fillSelect($("b2sel"), opts, s.bases[1] || "");
+  fillSelect($("b3sel"), opts, s.bases[2] || "");
+}
+function populateRoster(s) {
+  const sideSel = $("rsSide");
+  if (sideSel && document.activeElement !== sideSel) {
+    sideSel.innerHTML = `<option value="away">${escapeHtml(s.teams.away.name)}</option><option value="home">${escapeHtml(s.teams.home.name)}</option>`;
+  }
+  const editSel = $("editSel");
+  if (editSel && document.activeElement !== editSel) {
+    const opts = (side) =>
+      (s.players[side] || []).map((p, i) => `<option value="${side}:${i}">${escapeHtml(s.teams[side].name)}: ${escapeHtml(playerLabel(p))}</option>`).join("");
+    editSel.innerHTML = `<option value="">Select a player…</option>` + opts("away") + opts("home");
+  }
+}
+
+$("applyBases")?.addEventListener("click", () =>
+  toolPost("set_bases", { first: $("b1sel").value, second: $("b2sel").value, third: $("b3sel").value })
+);
+
+$("addBatterBtn")?.addEventListener("click", async () => {
+  const name = $("rsName").value.trim();
+  if (!name) return alert("Enter a batter name.");
+  const r = await toolPost("add_batter", { side: $("rsSide").value, name, number: $("rsNum").value.trim() });
+  if (r.ok) { $("rsName").value = ""; $("rsNum").value = ""; }
+});
+
+$("editSel")?.addEventListener("change", () => {
+  const v = $("editSel").value;
+  if (!v || !lastState) return;
+  const [side, index] = v.split(":");
+  const p = lastState.players[side]?.[Number(index)];
+  if (p) { $("editName").value = p.name; $("editNum").value = p.number ?? ""; }
+});
+$("editBatterBtn")?.addEventListener("click", async () => {
+  const v = $("editSel").value;
+  if (!v) return alert("Select a player to edit.");
+  const [side, index] = v.split(":");
+  const name = $("editName").value.trim();
+  const number = $("editNum").value.trim();
+  if (!name && number === "") return alert("Enter a new name and/or number.");
+  await toolPost("edit_batter", { side, index, name, number });
 });
 
 // ---- pre-game lineup setup ----------------------------------------------

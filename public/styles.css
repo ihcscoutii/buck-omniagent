@@ -127,6 +127,21 @@ main { max-width: 1180px; margin: 0 auto; padding: 20px; }
 .setup .hint { font-size: 12px; color: var(--muted); margin: 4px 0 10px; }
 .setup .hint code { background: #0a1410; padding: 1px 5px; border-radius: 4px; color: var(--accent2); }
 #startGame { background: var(--accent2); color: #002016; border: 0; padding: 9px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+/* Bases editor + live roster controls */
+.set-bases { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; }
+.set-bases label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); }
+.set-bases select, .roster-live select, .roster-live input {
+  background: #0a1410; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 7px; font: inherit;
+}
+.set-bases #applyBases, .roster-live button {
+  background: #1a3225; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; font-weight: 600;
+}
+.set-bases #applyBases:hover, .roster-live button:hover { border-color: var(--accent2); }
+.roster-live { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+.add-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+.add-row .num-in { width: 56px; }
+.add-row input:not(.num-in) { flex: 1; min-width: 120px; }
+
 .print-link { display: inline-block; margin-top: 14px; color: var(--accent); text-decoration: none; font-weight: 600; }
 .print-link:hover { text-decoration: underline; }
 

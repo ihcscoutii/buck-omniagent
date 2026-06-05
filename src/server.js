@@ -19,7 +19,10 @@ import {
   endGame,
   manualScore,
   setLineup,
+  addBatter,
+  editBatter,
   setBases,
+  stealBase,
   undo,
   playerStats,
   publicState,
@@ -70,7 +73,10 @@ const tools = {
   end_game: () => endGame(game),
   adjust_score: (b) => manualScore(game, b.team, Number(b.runs)),
   set_lineup: (b) => setLineup(game, b.side, b.players || []),
+  add_batter: (b) => addBatter(game, b.side, b.name, b.number),
+  edit_batter: (b) => editBatter(game, b.side, Number(b.index), { name: b.name, number: b.number }),
   set_bases: (b) => setBases(game, b.first, b.second, b.third),
+  steal_base: (b) => stealBase(game, Number(b.base)),
   reset_game: () => {
     // Start fresh but keep the same teams and batting orders (names + numbers).
     const lineup = (t) => t.players.map((p) => ({ name: p.name, number: p.number }));

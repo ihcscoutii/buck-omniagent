@@ -69,6 +69,21 @@
           </details>
 
           <details class="control">
+            <summary>Bases &amp; runners</summary>
+            <div class="btns">
+              <button data-tool="steal_base" data-args='{"base":1}'>Steal 2nd</button>
+              <button data-tool="steal_base" data-args='{"base":2}'>Steal 3rd</button>
+              <button data-tool="steal_base" data-args='{"base":3}'>Steal home</button>
+            </div>
+            <div class="set-bases">
+              <label>1B<select id="b1sel"></select></label>
+              <label>2B<select id="b2sel"></select></label>
+              <label>3B<select id="b3sel"></select></label>
+              <button id="applyBases">Set bases</button>
+            </div>
+          </details>
+
+          <details class="control">
             <summary>Lineups &amp; new game (enter before first pitch)</summary>
             <div class="setup">
               <div class="setup-row">
@@ -81,6 +96,22 @@
                 <label>Home lineup<textarea id="homeLineup" rows="9" placeholder="5 Sam&#10;9 Ana&#10;14 Lee"></textarea></label>
               </div>
               <button id="startGame">Start new game with these lineups</button>
+
+              <div class="roster-live">
+                <p class="hint">During the game (keeps stats):</p>
+                <div class="add-row">
+                  <select id="rsSide"><option value="away">Away</option><option value="home">Home</option></select>
+                  <input id="rsNum" class="num-in" placeholder="#" inputmode="numeric" />
+                  <input id="rsName" placeholder="Add batter name" />
+                  <button id="addBatterBtn">➕ Add</button>
+                </div>
+                <div class="add-row">
+                  <select id="editSel"></select>
+                  <input id="editNum" class="num-in" placeholder="#" inputmode="numeric" />
+                  <input id="editName" placeholder="New name" />
+                  <button id="editBatterBtn">✎ Update</button>
+                </div>
+              </div>
             </div>
           </details>
 

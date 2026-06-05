@@ -28,19 +28,19 @@ function teamTable(side) {
         <td class="ord">${r.orderIndex + 1}</td>
         <td class="batter">${num}${esc(r.name)}</td>
         ${cells}
-        <td>${t.ab}</td><td>${t.r}</td><td>${t.h}</td><td>${t.rbi}</td><td>${t.bb}</td><td>${t.k}</td><td>${t.avg}</td>
+        <td>${t.ab}</td><td>${t.r}</td><td>${t.h}</td><td>${t.rbi}</td><td>${t.bb}</td><td>${t.k}</td><td>${t.sb ?? 0}</td><td>${t.avg}</td>
       </tr>`;
     })
     .join("");
 
-  const runRow = `<tr class="tot-row"><td></td><td>Runs</td>${side.perInning.map((p) => `<td>${p.runs || ""}</td>`).join("")}<td colspan="7"></td></tr>`;
-  const hitRow = `<tr class="tot-row"><td></td><td>Hits</td>${side.perInning.map((p) => `<td>${p.hits || ""}</td>`).join("")}<td colspan="7"></td></tr>`;
+  const runRow = `<tr class="tot-row"><td></td><td>Runs</td>${side.perInning.map((p) => `<td>${p.runs || ""}</td>`).join("")}<td colspan="8"></td></tr>`;
+  const hitRow = `<tr class="tot-row"><td></td><td>Hits</td>${side.perInning.map((p) => `<td>${p.hits || ""}</td>`).join("")}<td colspan="8"></td></tr>`;
 
   return `<h2>${esc(side.name)}</h2>
     <table class="card">
       <thead><tr>
         <th class="ord">#</th><th class="batter">Batter</th>${innHead}
-        <th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>K</th><th>AVG</th>
+        <th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>K</th><th>SB</th><th>AVG</th>
       </tr></thead>
       <tbody>${rows || `<tr><td colspan="20" class="empty">No lineup entered</td></tr>`}${runRow}${hitRow}</tbody>
     </table>`;

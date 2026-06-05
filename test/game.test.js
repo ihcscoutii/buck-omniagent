@@ -14,6 +14,9 @@ import {
   gameRecap,
   endGame,
   setBases,
+  addBatter,
+  editBatter,
+  stealBase,
   currentBatter,
   playerStats,
 } from "../src/game.js";
@@ -179,6 +182,43 @@ test("setBases overrides the base runners", () => {
   recordPlay(g, { result: "single" });
   setBases(g, "Mia", "", "Jo");
   assert.deepEqual(g.bases, ["Mia", null, "Jo"]);
+});
+
+test("addBatter appends mid-game without resetting stats", () => {
+  const g = game(); // away: Tommy, Mia, Jo
+  recordPlay(g, { result: "single" }); // Tommy 1-for-1
+  addBatter(g, "away", "Ken", 24);
+  const names = g.away.players.map((p) => p.name);
+  assert.deepEqual(names, ["Tommy", "Mia", "Jo", "Ken"]);
+  assert.equal(playerStats(g, "Tommy").h, 1); // existing stats preserved
+  assert.equal(playerStats(g, "Ken").number, 24);
+});
+
+test("editBatter renames/renumbers by index, keeping stats", () => {
+  const g = game();
+  recordPlay(g, { result: "single" }); // Tommy gets a hit
+  editBatter(g, "away", 0, { name: "Thomas", number: 7 });
+  assert.equal(g.away.players[0].name, "Thomas");
+  assert.equal(g.away.players[0].number, 7);
+  assert.equal(g.away.players[0].h, 1); // stat survived the rename
+});
+
+test("stealBase advances the runner and credits a SB", () => {
+  const g = game();
+  recordPlay(g, { result: "single" }); // Tommy on 1B
+  stealBase(g, 1); // steals second
+  assert.deepEqual(g.bases, [null, "Tommy", null]);
+  assert.equal(playerStats(g, "Tommy").sb, 1);
+});
+
+test("stealing home scores a run", () => {
+  const g = game();
+  recordPlay(g, { result: "triple" }); // Tommy to 3B
+  stealBase(g, 3); // steal of home
+  assert.equal(g.score.away, 1);
+  assert.equal(playerStats(g, "Tommy").sb, 1);
+  assert.equal(playerStats(g, "Tommy").r, 1);
+  assert.deepEqual(g.bases, [null, null, null]);
 });
 
 test("recap names a player of the game and final headline", () => {
