@@ -8,7 +8,7 @@
 // to expose your local :3000 during a demo). Tools use the "explicit" flow so
 // calls are POSTed to PUBLIC_TOOL_URL/tools/<name>.
 
-import { writeFileSync } from "node:fs";
+import { writeFileSync, readFileSync } from "node:fs";
 
 const API = "https://companion-api.napster.com/public";
 const KEY = process.env.NAPSTER_API_KEY;
@@ -123,7 +123,8 @@ A coach or parent at the game talks to you and tells you what happens. Your job:
 IMPORTANT — stay in sync with the official scoreboard:
 - Every tool returns the authoritative game state: score, count, outs, the base runners (1st/2nd/3rd), and the current batter. This is the official scoreboard the audience sees.
 - ALWAYS describe the runners, score, and situation from the most recent returned state — never from your own memory. If you think a runner is somewhere the returned state disagrees with, trust the returned state.
-- The base-running tools auto-advance runners on common plays. If something unusual happens (a steal, pickoff, or a runner takes an extra base) and the returned bases look wrong, call set_bases to correct exactly who is on first, second, and third.`;
+- The base-running tools auto-advance runners on common plays. If something unusual happens (a pickoff, or a runner takes an extra base) and the returned bases look wrong, call set_bases to correct exactly who is on first, second, and third.
+- When a runner STEALS a base, call steal_base with the base they are currently on (1 = runner on first steals second, 2 = runner on second steals third, 3 = steal of home). Do NOT use set_bases for a steal — steal_base advances the runner and credits the stolen base.`;
 
 async function main() {
   // Upsert tools: create, or PUT to refresh if it already exists. This keeps the
@@ -159,16 +160,38 @@ async function main() {
     console.log(`  ✓ ${pick?.firstName ?? ""} ${pick?.lastName ?? ""} (${companionId})`);
   }
 
-  console.log("Creating agent…");
-  const agent = await api("POST", "/agents", {
+  // Reuse the existing agent if we have one (PATCH in place) so the agent id —
+  // and therefore the hosted app's AGENT_ID — never changes when we add tools.
+  // Falls back to creating a new agent only if none exists yet (or it's gone).
+  const agentBody = {
     companionId,
     name: "Buck the Scorekeeper",
     voiceId: VOICE_ID,
     functions: functionIds,
     providerSettings: { temperature: 0.7, instructions: SYSTEM_PROMPT },
-  });
-  const agentId = agent.id || agent.data?.id;
-  console.log(`  ✓ agent ${agentId}`);
+  };
+  let agentId = process.env.AGENT_ID;
+  if (!agentId) {
+    try {
+      agentId = JSON.parse(readFileSync(new URL("../.agent.json", import.meta.url))).agentId;
+    } catch {}
+  }
+  if (agentId) {
+    try {
+      await api("PATCH", `/agents/${agentId}`, agentBody);
+      console.log(`Updated existing agent ${agentId} (AGENT_ID stays the same).`);
+    } catch (e) {
+      if (/40[045]|NotFound/i.test(e.message)) {
+        const created = await api("POST", "/agents", agentBody);
+        agentId = created.id || created.data?.id;
+        console.log(`Previous agent gone; created new agent ${agentId}.`);
+      } else throw e;
+    }
+  } else {
+    const created = await api("POST", "/agents", agentBody);
+    agentId = created.id || created.data?.id;
+    console.log(`Created agent ${agentId}.`);
+  }
 
   console.log(`Opening ${CHANNEL} session…`);
   const conn = await api("POST", `/agents/${agentId}/connections`, { channelType: CHANNEL });
