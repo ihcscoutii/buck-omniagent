@@ -7,3 +7,7 @@ bin/
 *.log
 .DS_Store
 npm-debug.log*
+
+# Kept locally, not committed (pushing it needs a PAT with the 'workflow' scope).
+# Re-enable later: remove this line, add the workflow scope, and commit it.
+.github/workflows/azure.yml
