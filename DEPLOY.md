@@ -9,6 +9,15 @@ runs on App Service with no code changes.
 > Target: **Azure App Service (Linux, Node 20)**. Not Static Web Apps — we need a
 > long-running process for SSE and server-side token minting.
 
+## Live deployment (current)
+- **App:** `buck-scorekeeper-en` — resource group `buck-rg`
+- **URL:** `https://buck-scorekeeper-en.azurewebsites.net`
+- **Agent (production key):** `04cc9f3f-6d0c-44ef-bde1-1825f8efa460` (companion "Thijm Vermeerden")
+- App settings live on the web app: `NAPSTER_API_KEY`, `PUBLIC_TOOL_URL`, `TOOL_SECRET`, `AGENT_ID`.
+
+The steps below are the from-scratch recipe. To swap in a new key or agent on the
+existing app, see [Rotating to a new API key](#rotating-to-a-new-api-key-or-agent).
+
 ## Prerequisites
 - Azure CLI: `az login`
 - Your hackathon `NAPSTER_API_KEY`
@@ -71,6 +80,54 @@ Spectators can open the same URL and watch the scoreboard read-only without the 
 - Code change: `az webapp up` again (same name) — or set up CI (below).
 - Changed `PUBLIC_TOOL_URL` or `TOOL_SECRET`: re-run **step 3** (setup upserts the
   tools so the new URL/secret are applied) and update the matching App Settings.
+
+## Rotating to a new API key (or agent)
+When you move to a different `NAPSTER_API_KEY` (e.g. hackathon → production), the
+old agent id belongs to the old account and is gone — you register a fresh one.
+No code deploy is needed; only the app settings change (which auto-restarts the app).
+
+```bash
+APP=buck-scorekeeper-en; RG=buck-rg
+URL=https://buck-scorekeeper-en.azurewebsites.net
+
+# 1. Force a fresh agent create (don't PATCH the old id) — setup reuses .agent.json
+#    / AGENT_ID by default, so move it aside first.
+mv .agent.json .agent.json.bak
+
+# 2. Register a new agent + re-register all tools against the Azure URL.
+#    TOOL_SECRET must match what the app enforces (pull it from the app settings).
+NAPSTER_API_KEY='<new key>' \
+PUBLIC_TOOL_URL="$URL" \
+TOOL_SECRET="$(az webapp config appsettings list -n $APP -g $RG \
+  --query "[?name=='TOOL_SECRET'].value | [0]" -o tsv | tr -d '[:space:]')" \
+node src/setup-napster.js          # prints + saves the new agentId to .agent.json
+
+# 3. Point the live app at the new key + agent (auto-restarts).
+az webapp config appsettings set -n $APP -g $RG --settings \
+  NAPSTER_API_KEY='<new key>' \
+  AGENT_ID="$(node -e "console.log(JSON.parse(require('fs').readFileSync('.agent.json')).agentId)")"
+
+# 4. Verify the whole chain end-to-end (should return a token, not an error):
+curl -s -X POST "$URL/api/token?channel=webrtc" \
+  -H "x-tool-secret: $(az webapp config appsettings list -n $APP -g $RG \
+     --query "[?name=='TOOL_SECRET'].value | [0]" -o tsv | tr -d '[:space:]')"
+```
+Right after step 3 the app restarts; the first `/api/token` may return
+`502 No token from Napster` during cold start — retry once it's warm.
+
+## Gotchas
+- **`az` on WSL emits CRLF.** The Azure CLI here is Windows `az.exe` running under
+  WSL, so `... -o tsv` values come back with a trailing `\r`. In `$(...)` the `\n`
+  is stripped but the `\r` survives, so a clean 64-char key reads back as 65 chars.
+  It's a **readback artifact — the stored value is clean.** Always pipe secret
+  reads through `tr -d '[:space:]'` (as above) before comparing or reusing them,
+  or you'll chase a phantom trailing character.
+- **`setup-napster.js` reuses the existing agent by default** (reads `.agent.json`
+  / `AGENT_ID` and PATCHes it in place so the id is stable). To create a *new*
+  agent — e.g. under a new key where the old id doesn't exist — move `.agent.json`
+  aside first, otherwise it will try (and fail) to patch the stale id.
+- **`.agent.json` is gitignored** and not deployed, which is why Azure needs
+  `AGENT_ID` set explicitly.
 
 ## Optional: push-to-deploy with GitHub Actions
 `.github/workflows/azure.yml` deploys on every push to `main`. To enable it:
