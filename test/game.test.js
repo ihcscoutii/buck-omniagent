@@ -19,6 +19,7 @@ import {
   stealBase,
   currentBatter,
   playerStats,
+  manualScore,
 } from "../src/game.js";
 
 function game() {
@@ -242,4 +243,13 @@ test("line score tracks runs per inning", () => {
   const first = s.lineScore.find((c) => c.inning === 1);
   assert.equal(first.top, 1);
   assert.equal(first.bottom, 1);
+});
+
+test("adjust_score correction stays in sync with the line score", () => {
+  const g = game();
+  recordPlay(g, { result: "home_run" }); // wrongly-credited run, top 1
+  manualScore(g, "away", -1); // scorekeeper corrects the mistake
+  assert.equal(g.score.away, 0);
+  const first = g.lineScore.find((c) => c.inning === 1);
+  assert.equal(first.top, 0);
 });

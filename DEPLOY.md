@@ -6,7 +6,7 @@ Azure address. The app is a zero-dependency Node HTTP server that already reads
 its config from environment variables and listens on `process.env.PORT`, so it
 runs on App Service with no code changes.
 
-> Target: **Azure App Service (Linux, Node 20)**. Not Static Web Apps — we need a
+> Target: **Azure App Service (Linux, Node 24)**. Not Static Web Apps — we need a
 > long-running process for SSE and server-side token minting.
 
 ## Live deployment (current)
@@ -27,7 +27,7 @@ existing app, see [Rotating to a new API key](#rotating-to-a-new-api-key-or-agen
 # From the project root. Creates resource group, plan, and web app, then uploads.
 az webapp up \
   --name buck-scorekeeper \
-  --runtime "NODE:20-lts" \
+  --runtime "NODE:24-lts" \
   --sku B1 \
   --location eastus
 ```

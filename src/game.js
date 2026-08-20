@@ -440,6 +440,21 @@ export function manualScore(game, team, runs) {
   snapshot(game);
   if (team !== "home" && team !== "away") throw new Error("team must be home/away");
   game.score[team] += runs;
+  // Keep the line score (and its per-inning sum) in sync with the team total:
+  // an addition credits the current inning; a removal peels runs off the most
+  // recent innings that team actually scored in, newest first.
+  const halfKey = team === "away" ? "top" : "bottom";
+  if (runs > 0) {
+    ensureLineScoreCell(game)[halfKey] += runs;
+  } else if (runs < 0) {
+    let remaining = -runs;
+    for (let i = game.lineScore.length - 1; i >= 0 && remaining > 0; i--) {
+      const cell = game.lineScore[i];
+      const take = Math.min(cell[halfKey], remaining);
+      cell[halfKey] -= take;
+      remaining -= take;
+    }
+  }
   logPlay(game, `Adjusted ${game[team].name} score by ${runs}.`);
   return summarize(game);
 }
